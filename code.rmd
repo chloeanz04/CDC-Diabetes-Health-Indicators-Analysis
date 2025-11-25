@@ -1,0 +1,1418 @@
+---
+title: "Đồ án cuối kỳ"
+subtitle: "Project 2 - CDC Diabetes Health Indicators"
+author: "Nhóm 11"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+# Library
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(themis)
+library(caret)
+library(dplyr)
+library(lmPerm)
+library(corrplot)
+```
+
+
+# I. Load Dataset
+```{r}
+data <- read_csv(file = 'diabetes_012_health_indicators_BRFSS2015.csv') |> janitor::clean_names()
+```
+
+```{r}
+table(data['diabetes_012'])
+```
+
+# II. EDA
+
+## Explore Dataset
+
+```{r}
+glimpse(data)
+```
+
+## Clean Dataset
+
+- Kiểm tra dữ liệu có bị NA hay không
+
+```{r}
+sum(is.na(data))
+```
+- Kiểm tra và xử lý dữ liệu bị trùng
+
+```{r}
+sum(duplicated(data))
+```
+
+```{r}
+data_diabete <- unique(data)
+sum(duplicated(data_diabete))
+```
+
+## Preprocessing & Visualization
+
+### Preprocessing
+
+```{r}
+#Các biến nhị phân (0, 1)
+for (col in names(data_diabete)) {
+  if (all(data_diabete[[col]] %in% c(0, 1))) {
+    data_diabete[[col]] <- factor(data_diabete[[col]])
+  }
+}
+
+#Các biến thang đo
+data_diabete <- data_diabete |> mutate(gen_hlth = factor(gen_hlth))
+data_diabete <- data_diabete |> mutate(age = factor(age))
+
+
+#Biến tiểu đường
+data_diabete <- data_diabete |> mutate(diabetes_012 = factor(diabetes_012))
+```
+
+```{r}
+cor(data_diabete[, sapply(data_diabete, is.numeric)], use = "complete.obs")
+```
+
+```{r}
+data_diabete <- data_diabete |> mutate( education  = factor( education ))
+data_diabete <- data_diabete |> mutate(income = factor(income))
+```
+
+```{r}
+glimpse(data_diabete)
+```
+
+```{r}
+sapply(data_diabete, function(x) length(unique(x)))
+```
+
+```{r}
+data_summary <- data_diabete |>
+  dplyr::select(where(is.numeric)) |>  # Lọc chỉ các biến định lượng
+  summarise(
+    across(
+      everything(),
+      list(
+        gtnn = ~min(., na.rm = TRUE),
+        gtln = ~max(., na.rm = TRUE),
+        tv = ~median(., na.rm = TRUE),
+        tb = ~mean(., na.rm = TRUE),
+        dlc = ~sd(., na.rm = TRUE),
+        iqr = ~IQR(., na.rm = TRUE)
+      )
+    )
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = c("bien", "tk"),
+    names_pattern = "^(.*)_(.*)$",
+    values_to = "gt"
+  ) |>
+  pivot_wider(
+    names_from = tk,
+    values_from = gt
+  ) |>
+  dplyr::select(bien, gtnn, gtln, tv, tb, dlc, iqr)
+data_summary
+```
+
+### Visualization
+
+ -- Tổng quan phân phối của các biến
+
+```{r fig.height=12, fig.width=10}
+# Cài đặt các thư viện cần thiết
+renew_df <- data_diabete
+
+cols <- colnames(renew_df)
+
+set.seed(123)
+colors <- grDevices::rainbow(length(cols))
+
+plot_list <- list()
+
+for (i in seq_along(cols)) {
+col <- cols[i]
+color <- colors[i]
+
+p <- ggplot(renew_df, aes_string(x = col)) +
+geom_bar(fill = color, color = "black", alpha = 0.7) +
+labs(title = paste(col, "Distribution")) +
+theme_minimal()
+
+plot_list[[col]] <- p
+}
+
+do.call(grid.arrange, c(plot_list, ncol = 3))
+
+
+```
+
+-- `high_bp` với `diabetes_012`
+
+```{r warning=FALSE}
+#Vẽ biểu đồ kiểm tra những người bị tiểu đường thì huyết áp có cao không
+data_diabete|> 
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels =  c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse(high_bp == 1, "High", "Normal")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "High BP vs Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "Blood Pressure") +
+  theme_minimal()
+
+```
+
+```{r}
+table(data_diabete$high_bp,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Cao huyết áp ít hơn người bình thường 39.52%. 
+
+2. Pre (1): Cao huyết áp nhiều hơn người bình thường 62,9%.  
+
+3. Diabete (2): Cao huyết áp nhiều hơn người bình thường 75,24%.  
+
+Vậy, tình trạng cao huyết áp phổ biến ở người tiểu đường và tiền tiểu đường.  
+
+-- `high_chol` và `diabetes_012`
+```{r}
+#Vẽ biểu đồ kiểm tra những người bị tiểu đường thì có bị cao cholesterol hay không
+data_diabete |> 
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels =  c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse(high_chol == 1, "High", "Normal")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "High Cholesterol vs Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "High Cholesterol") +
+  theme_minimal()
+```
+```{r}
+table(data_diabete$high_chol,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Người có lượng cholesterol cao chiếm khoảng 39,53%.  
+
+2. Pre (1): Người có lượng cholesterol cao chiếm khoảng 62,09%.  
+
+3. Diabetes (2):Người có lượng cholesterol cao chiếm khoảng 66,95%.  
+ 
+Suy ra, người có lượng cholesterol cao thường là người tiểu đường và tiền tiểu đường.  
+
+
+-- `smoker` với `diabetes_012`
+```{r}
+#Vẽ biểu đồ kiểm tra những người bị tiểu đường thì có hút thuốc hay không
+data_diabete |>
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels =  c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse(smoker == 1, "Yes", "No")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "Smoker vs Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "smoker") +
+  theme_minimal()
+
+```
+```{r}
+table(data_diabete$smoker,data_diabete$diabetes_012)
+```
+**Nhận xét**  
+
+1. Non (0): Người có hút thuốc chiếm khoảng 45,51%.  
+
+2. Pre (1): Người có hút thuốc chiếm khoảng 49,28%.  
+
+3. Diabete (2): Người có hút thuốc chiếm khoảng 51,92%%.  
+
+Tỉ lệ hút thuốc các nhóm không chênh lệch nhiều, suy ra biến `smoker` có thể không ảnh hưởng tới biến mục tiêu.  
+
+-- `stroke` với `diabetes_012`
+```{r}
+# Stroke có liên quan không?
+# Vẽ biểu đồ kiểm tra sự liên quan giữa stroke và diabetes_012
+data_diabete |>
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse(stroke == 0, "No", "Yes")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "Stroke vs Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "Had Stroke in the past") +
+  theme_minimal()
+
+```
+```{r}
+table(data_diabete$stroke,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Người đã từng đột quỵ chiếm khoảng 3,55%.  
+
+2. Pre (1): Người đã từng đột quỵ chiếm khoảng 5,72%.  
+
+3. Diabete (2): Người đã từng đột quỵ chiếm khoảng 9,31%.    
+
+Suy ra, yếu tố đột quỵ dường như không ảnh hưởng đến sự tiểu đường.  
+
+-- `sex` với `diabetes_012`
+```{r}
+#Sex
+#Vẽ biểu đồ kiểm tra liệu giới tính có liên quan tới khả năng mắc bệnh tiểu đường
+data_diabete |>
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse(sex == 1, "Male", "Female")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "Sex vs Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "Male and Female") +
+  theme_minimal()
+```
+```{r}
+table(data_diabete$sex,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Nam chiếm khoảng 43,22%, nữ là 56,78%.  
+
+2. Pre (1): Nam chiếm khoảng 43,75%, nữ là 56,25%.  
+
+3. Diabete (2):Nam chiếm khoảng 47,73%%, nữ là 52,27%.    
+
+
+Suy ra, ta thấy số người mắc bệnh tuổi đường ở nữ cao hơn. Nhưng sự chênh lệch tỉ lệ nam và nữ ở các nhóm không nhiều.  
+
+-- `bmi` và `diabetes_012`
+```{r}
+#BMI 
+ggplot(data_diabete, aes(x = bmi,color = diabetes_012)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of BMI by Diabetes ")
+```
+```{r}
+data_diabete_copy <- data_diabete
+
+# Chia các mức chỉ số BMI và thêm vào bản sao
+data_diabete_copy$bmi <- cut(data_diabete_copy$bmi, 
+                                   breaks = c(-Inf, 18.5, 24.9, 29.9, 34.9, 39.9, Inf),
+                                   labels = c("Underweight", "Healthy Weight", "Overweight", 
+                                              "Obese", "Severely Obese", "Morbidly Obese"),
+                                   right = FALSE) 
+```
+
+**Nhận xét:** từ biểu đồ ta thấy được những người Pre-Diabetes và Diabetes có BMI cao hơn so với những người không mắc bệnh.  
+
+```{r}
+table(data_diabete_copy$bmi,data_diabete$diabetes_012)
+```
+
+
+**Nhận xét**  
+
+\+ Người ở nhóm gầy rất ít người bị tiểu đường  
+
+\+ Người từ mức thừa cân trở lên nguy cơ bị tiểu đường cao  
+
+\+ Người mắc bệnh béo phì có nguy cơ mắc tiểu đường cao gấp 8 lần so với những người có trọng lượng cơ thể bình thường hoặc thậm chí gầy.  
+
+
+-- `age` và `diabetes_012`
+
+```{r}
+q1_data <- data_diabete |>
+  group_by(diabetes_012) |>
+  summarise(Q1 = quantile(as.numeric(age), 0.25, na.rm = TRUE))
+
+ggplot(data = data_diabete, aes(x = diabetes_012, y = as.numeric(age), fill = diabetes_012)) +
+  geom_boxplot() +
+  labs(title = "Diabetes Status vs Age", x = "Diabetes_012", y = "Age") +
+  scale_fill_manual(values = c("salmon", "lightblue", "forestgreen"), labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")) +
+  scale_x_discrete(labels = c("0" = "Non-Diabetes", "1" = "Pre-Diabetes", "2" = "Diabetes")) +
+  scale_y_continuous(breaks = seq(0, 20, by = 1)) +
+  geom_text(
+    data = q1_data,
+    aes(x = diabetes_012, y = Q1, label = round(Q1, 1)),
+    inherit.aes = FALSE,
+    vjust = 1.5,
+    hjust = 1.2,
+    color = "black"
+  )
+
+```
+
+
+**Nhận xét:** Càng lớn tuổi nguy cơ mắc bệnh tiểu đường càng cao.  
+
+
+-- Người có bệnh nền thì có nguy cơ tiểu đường không?
+```{r}
+data_diabete|> 
+  ggplot(aes(x = factor(diabetes_012, levels = c(0, 1, 2), 
+                       labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")),
+             fill = factor(ifelse( heart_diseaseor_attack== 1, "Yes", "No")))) +
+  geom_bar(stat="count", alpha = 0.8) + 
+  labs(title = "Heart diseaseor attack and Diabetes", 
+       x = "", 
+       y = "", 
+       fill = "Yes and No") +
+  theme_minimal()
+```
+```{r}
+table(data_diabete$heart_diseaseor_attack,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Người mắc bệnh tim chiếm khoảng 8%.  
+
+2. Pre (1): Người mắc bệnh tim chiếm khoảng 14,34%.  
+
+3. Diabete (2): Người mắc bệnh tim chiếm khoảng 22,38%.  
+
+
+=> Theo số liệu ta thấy những người mắc bệnh tim thì có nguy cơ bị tiểu đường cao hơn.  
+
+
+Nhóm đưa ra câu hỏi, **liệu những người cao tuổi và có bệnh nền (bệnh tim) thì có nguy cơ mắc bệnh tiểu đường cao hơn hay không?**  
+
+-- Kiểm tra câu hỏi
+```{r}
+diabetes_heart <- subset(data_diabete, diabetes_012 == 2 & heart_diseaseor_attack == 1)
+group_1 <- nrow(diabetes_heart)
+diabetes_heart$age <- diabetes_heart$age
+
+group_2 <- nrow(subset(diabetes_heart, as.numeric(diabetes_heart$age) >= 8))
+df <- data.frame(
+  Subgroup = c("Heart Diseaseor Attack", "Heart Diseaseor Attack > 55 years old"),
+  Count = c(group_1, group_2)
+)
+
+ggplot(df, aes(x = "", y = Count, fill = Subgroup)) +
+  geom_bar(stat = "identity", width = 0.5, position = position_identity(), alpha = 0.7) +
+  labs(
+    title = "Diabetes base on heart diseaseor attack and age",
+    x = "",
+    y = "Count",
+    fill = ""
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Heart Diseaseor Attack" = "darkorange", "Heart Diseaseor Attack > 55 years old" = "skyblue")) +
+  geom_text(aes(label = Count), position = position_stack(vjust = 0.075))
+```
+
+**Nhận xét:** Những người từ 55 tuổi trở lên, mắc bệnh tim và mắc bệnh tiểu đường hơn 89% số người mắc bệnh tim và mắc bệnh tiểu đường.  
+
+
+-- `diff_walk` và `diabetes_012`
+```{r}
+data_diabete |>
+  ggplot(aes(x = diabetes_012, fill = factor(diff_walk))) +
+  geom_bar(position = "dodge") +  
+  scale_x_discrete(
+    labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")  
+  ) +
+  scale_fill_discrete(
+    labels = c("No", "Yes")  
+  ) +
+  labs(
+    title = "Difficulty Walking vs Diabetes Status",
+    x = "Diabetes_012",
+    y = "Count",
+    fill = "Diff_walk"
+  ) +
+  theme_minimal()
+
+```
+
+
+-- `gen_health` và `diabetes_012`
+```{r}
+data_diabete |>
+  ggplot(aes(x = diabetes_012, fill = gen_hlth)) +
+  geom_bar(position = "dodge") +
+  scale_x_discrete(
+    labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")  
+  ) +
+  scale_fill_discrete(
+    labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")  
+  ) +
+  labs(
+    title = "Gen Health vs Diabetes Status",
+    x = "Diabetes_012",
+    y = "Count",
+    fill = "Gen_health"
+  ) +
+  theme_minimal()
+
+```
+```{r}
+table(data_diabete$gen_hlth,data_diabete$diabetes_012)
+```
+
+**Nhận xét**  
+
+1. Non (0): Người có sức khỏe trung bình/kém chiếm 14,67%.  
+
+2. Pre (1): Người có sức khỏe trung bình/kém chiếm 29,73%.  
+
+3. Diabetes (2): Người có sức khỏe trung bình/kém chiếm 40,91%.  
+
+=> Người bị tiểu đường có điểm đánh giá sức khỏe chung kém hơn các nhóm còn lại.  
+
+-- `income` và `diabetes_012`
+```{r}
+ggplot(data = data_diabete, aes(x = diabetes_012, y = as.numeric(income), fill = diabetes_012)) +
+  geom_boxplot() +
+  labs(title = "Diabetes Status vs Income", x = "Diabetes_012", y = "Income") +
+  scale_fill_manual(values = c("salmon", "lightblue", "forestgreen"), labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")) +
+  scale_x_discrete(labels = c("0" = "Non-Diabetes", "1" = "Pre-Diabetes", "2" = "Diabetes"))
+```
+
+**Nhận xét**: Người có thu nhập càng cao thì càng ít bị tiểu đường hơn. Vì nhóm người này có cơ hội tiếp xúc với điều kiện sống tốt hơn.
+
+-- Tương quan giữa biến education và income cao
+
+```{r fig.height=5.5, fig.align = "center"}
+ggplot(data_diabete, aes(x = education, y = as.numeric(income), fill = education)) +
+  geom_boxplot() +
+  scale_fill_discrete(
+    labels = c("Never attended school or only kindergarten", "Grades 1 through 8 (Elementary)", "Grades 9 through 11 (Some high school)", "Grade 12 or GED (High school graduate)", "College 1 year to 3 years (Some college or technical school)", "College 4 years or more (College graduate)"))
+```
+
+**Nhận xét**: Người có học vấn càng cao thì có thu nhập càng cao.
+
+- `ment_hlth` vs `phys_hlth`
+```{r}
+data_summary <- data_diabete |>
+  gather(key = "Health_Type", value = "Health_Score", phys_hlth, ment_hlth) |>
+  group_by(diabetes_012, Health_Type) %>%
+  summarise(tb = round(mean(Health_Score, na.rm = TRUE),3), .groups = "drop") |>
+  ungroup()
+
+ggplot(data_summary, aes(x = factor(diabetes_012), y = tb, fill = Health_Type)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_manual(
+    values = c("skyblue", "salmon"),
+    labels = c("Physical Health", "Mental Health")
+  ) +
+  labs(
+    title = "Health Type vs Diabetes Status",
+    x = "Diabetes_012",
+    y = "Average",
+    fill = "Health Type"
+  ) +
+  scale_x_discrete(
+    labels = c("Non-Diabetes", "Pre-Diabetes", "Diabetes")
+  ) +
+  theme_minimal() +
+  geom_text(
+    aes(label = tb), 
+    position = position_dodge(width = 0.9),  
+    vjust = -0.5  
+  )
+```
+
+**Nhận xét**: Theo biểu đồ, số ngày tinh thần/sức khỏe không ổn định trung bình của nhóm người bị tiểu đường luôn cao hơn các nhóm còn lại.  
+
+
+-- Các nhóm biến Lifestyle bao gồm: `phys_activity`, `veggies`, `fruits`
+
+```{r warning=FALSE}
+# Phys_activities
+gender_dist <- data_diabete |>
+group_by(phys_activity, diabetes_012) |>
+summarise(Count = n()) |>
+mutate(Percentage = Count / sum(Count) * 100)
+
+ggplot(gender_dist,aes(x = factor(ifelse(phys_activity == 1, "Yes", "No")), y = Percentage, fill = ifelse(diabetes_012==2, "Diabetes",ifelse(diabetes_012 == 1, "Pre-Diabetes" ,"Non-Diabetes")))) +
+geom_bar(stat = "identity", position = "dodge",width = 0.75) +
+geom_text(aes(label = paste0(round(Percentage, 1), "%")),
+position = position_dodge(width = 0.8),
+vjust = -0.5, size = 4) +
+labs(title = "Phys Activity vs Diabetes_012", x = "Phys Activity", y = "Percentage (%)", fill = "Diabetes_012") +
+theme_minimal()
+```
+
+```{r}
+# Veggies
+gender_dist <- data_diabete %>%
+group_by(veggies, diabetes_012) %>%
+summarise(Count = n()) %>%
+mutate(Percentage = Count / sum(Count) * 100)
+
+ggplot(gender_dist, aes(x = factor(ifelse(veggies== 1,"Yes", "No")), y = Percentage, fill = factor(ifelse(diabetes_012==2, "Diabetes",ifelse(diabetes_012 == 1, "Pre-Diabetes" ,"Non-Diabetes"))))) +
+geom_bar(stat = "identity", position = "dodge",width = 0.75) +
+geom_text(aes(label = paste0(round(Percentage, 1), "%")),
+position = position_dodge(width = 0.8),
+vjust = -0.5, size = 4) +
+labs(title = "Veggies vs Diabetes_012", x = "Veggies", y = "Percentage (%)", fill = "Diabetes_012") +
+theme_minimal()
+
+
+```
+
+```{r}
+# Fruits
+gender_dist <- data_diabete %>%
+group_by(fruits, diabetes_012) %>%
+summarise(Count = n()) %>%
+mutate(Percentage = Count / sum(Count) * 100)
+
+ggplot(gender_dist, aes(x = factor(ifelse(fruits== 1,"Yes", "No")), y = Percentage, fill = factor(ifelse(diabetes_012==2, "Diabetes",ifelse(diabetes_012 == 1, "Pre-Diabetes" ,"Non-Diabetes"))))) +
+geom_bar(stat = "identity", position = "dodge",width = 0.75) +
+geom_text(aes(label = paste0(round(Percentage, 1), "%")),
+position = position_dodge(width = 0.8),
+vjust = -0.5, size = 4) +
+labs(title = "Fruits vs Diabetes_012", x = "Fruits", y = "Percentage (%)", fill = "Diabetes_012") +
+theme_minimal()
+
+
+```
+
+**Nhận xét**: Những người có lối sống lành mạnh như tham gia hoạt động thể chất, ăn rau xanh và trái cây có thể có tỷ lệ mắc bệnh tiểu đường thấp hơn và tỷ lệ không mắc bệnh cao hơn những người sống thiếu lành mạnh. Điều này cho thấy việc rèn luyện, tham gia hoạt động thể chất, chế độ ăn nhiều rau củ, trái cây chứa nhiều vitamin, giàu chất xơ dường như có ảnh hưởng tích cực đến sức khỏe, giúp giảm nguy cơ mắc bệnh tiểu đường.  
+
+-- Kiểm tra xem có sự khác biệt đáng kể giữa hai biến `Pre-diabete` và `Diabete` thông qua một số biến đặc trưng
+
+```{r}
+select_12 <- data_diabete |> filter(!diabetes_012 == 0)
+table(select_12['diabetes_012'])
+```
+
+```{r}
+
+ggplot(select_12, aes(x = bmi, y = ment_hlth, color = diabetes_012)) +
+  geom_point() +
+  labs(title = "Scatter plot of BMI vs Mental Health")
+
+```
+```{r}
+# Histogram of bmi
+ggplot(select_12, aes(x = bmi, fill = diabetes_012)) +
+  geom_histogram(binwidth = 2, alpha = 0.5, position = "identity") +
+  labs(title = "Distribution of BMI by Diabetes Type")
+```
+
+```{r}
+# Density plot of physical health (phys_hlth)
+ggplot(select_12, aes(x = phys_hlth, color = diabetes_012)) +
+  geom_density()
+```
+
+*Nhận xét:** Thông qua một vài biến đặc trưng thì ta thấy không có sự khác biệt đáng kể giữa hai biến `Pre-diabete` và `Diabete`.  
+
+
+# II. A/B Testing
+
+```{r}
+# Lấy ngẫu nhiên 10% dữ liệu đã cho
+set.seed(123)
+sample_data <- data_diabete |> sample_frac(0.1)  # Lấy 10% dữ liệu
+```
+
+
+- **Kiểm tra các biến định tính giả thuyết đặt ra có chính xác hay không**  
+
+```{r}
+
+set.seed(123)  
+
+resampling_method <- function(data, x, y, R) {
+  contingency_table <- table(data[[x]], data[[y]])
+  ri <- rowSums(contingency_table)  # Tổng các quan sát theo dòng
+  cj <- colSums(contingency_table)  # Tổng các quan sát theo cột
+  N <- sum(contingency_table)       # Tổng số lượng quan sát
+
+  Eij <- outer(ri, cj, FUN = "*") / N
+  observed_w <- sum((contingency_table - Eij)^2 / Eij)
+  w_star <- numeric(R)
+  for (r in 1:R) {
+    sample_i <- rep(1:length(ri), ri) 
+    sample_j <- sample(sample_i, size = length(sample_i), replace = TRUE)
+    new_contingency_table <- table(sample_i, sample_j)
+    E_star_ij <- outer(rowSums(new_contingency_table), colSums(new_contingency_table), FUN = "*") / N
+    w_star[r] <- sum((new_contingency_table - E_star_ij)^2 / E_star_ij)
+  }
+
+  p_value <- mean(w_star > observed_w)
+  return(p_value)
+}
+```
+
+
+**Kiểm tra các biến định tính có độc lập với biến mục tiêu không**
+
+```{r warning=FALSE}
+data_diabete_var <- sample_data |>
+select(-c("bmi","ment_hlth","phys_hlth"))
+
+correlation_test <- function(df, target_var) {
+results <- data.frame(
+Variable = character(),
+P_Value = numeric(),
+stringsAsFactors = FALSE
+)
+
+
+for (col_name in colnames(df)) {
+if (col_name == target_var) next
+
+if (is.factor(df[[col_name]]) || is.character(df[[col_name]])) {
+freq_table <- table(df[[target_var]], df[[col_name]])
+
+test <- resampling_method(data_diabete_var,col_name,target_var,100)
+
+results <- rbind(results, data.frame(
+Variable = col_name,
+p_value = test
+))
+}
+}
+results <- results[order(results$p_value), ]
+
+# Trả về bảng kết quả
+return(results)
+}
+```
+
+```{r}
+# Gọi hàm với dataframe data_diabete và biến mục tiêu diabetes_012
+correlation_test(data_diabete_var, "diabetes_012")
+```
+
+**Nhận xét**: p_value của các biến định tính gần như bằng không. Bác bỏ H0, tức là các biến đều có sự phụ thuộc vào biến mục tiêu.  
+
+- **Kiểm định ANOVA**  
+
+-- `bmi` của 3 nhóm 0, 1, 2 có tương đồng nhau  
+
+```{r}
+anova_bmi <- aovp(formula = bmi ~ diabetes_012, data = sample_data , perm ="Prob")  # Giảm xuống 1000 lần hoán vị
+summary(anova_bmi)
+```
+**Nhận xét:** p_value =  2.2e-16 rất nhỏ.  
+
+-- `ment_hlth` của 3 nhóm 0, 1, 2 có tương đồng nhau   
+
+```{r}
+anova_ment <- aovp(formula = ment_hlth ~ diabetes_012, data = sample_data , perm ="Prob")  # Giảm xuống 1000 lần hoán vị
+summary(anova_ment)
+
+```
+**Nhận xét:** p_value = 2.2e-16 rất nhỏ.  
+
+-- `phys_hlth` của 3 nhóm 0, 1, 2 có tương đồng nhau  
+
+```{r}
+anova_phys <- aovp(formula = phys_hlth ~ diabetes_012, data = sample_data , perm ="Prob")  # Giảm xuống 1000 lần hoán vị
+summary(anova_phys)
+```
+
+**Nhận xét:** p_value = 2.2e-16 rất nhỏ.  
+
+# III. Classification Model
+
+## 1. Multi-Classification for Non-Pre-Diabete Prediction
+
+### Correlation
+
+Đổi biến `diabetes_012` thành `diabetes_type`
+```{r}
+data <- data |> rename(diabetes_type = diabetes_012)
+data_diabete <- data 
+corr <- cor(data_diabete[,-1], data_diabete[,1])
+corr
+```
+
+```{r fig.height=20, fig.width=20}
+corrplot(cor(data_diabete), method = "color", type = "upper", tl.col = "black")
+```
+
+Top 10 biến có tương quan cao nhất với biến mục tiêu `diabetes_type`:
+```{r}
+top_features <- names(sort(abs(corr[,1]), decreasing = TRUE))[1:10]
+top_features
+```
+
+### Preprocessing for modeling
+
+Chuyển đổi kiểu dữ liệu của `diabetes_type` thành factor:
+
+```{r}
+data_diabete <- data_diabete |> mutate(diabetes_type = factor(diabetes_type, levels = c(0,1,2), 
+                                                              labels = c("Non-diabete",
+                                                                         "Pre-diabete",
+                                                                         "Diabete")))
+```
+
+Chuyển đổi kiểu dữ liệu của top 10 biến có tương quan cao nhất với biến mục tiêu into factor:
+```{r}
+data_diabete <- data_diabete |> mutate(gen_hlth = factor(gen_hlth, levels = c(1,2,3,4,5),
+                                                         labels = c("Excellent",
+                                                                    "Very good",
+                                                                    "Good",
+                                                                    "Fair",
+                                                                    "Poor")))
+data_diabete <- data_diabete |> mutate(high_bp = factor(high_bp, levels = c(0,1), labels = c("No", "Yes")))
+data_diabete <- data_diabete |> mutate(high_chol = factor(high_chol, levels = c(0,1), labels = c("No", "Yes")))
+data_diabete <- data_diabete |> mutate(diff_walk = factor(diff_walk, levels = c(0,1), labels = c("No", "Yes")))
+data_diabete <- data_diabete |> mutate(heart_diseaseor_attack = factor(heart_diseaseor_attack, levels = c(0,1), labels = c("No", "Yes")))
+data_diabete <- data_diabete |> mutate(age = factor(age, levels = c(1,2,3,4,5,6,7,8,9,10,11,12,13),
+                                                    labels = c("18-24",
+                                                               "24-29",
+                                                               "30-34",
+                                                               "35-39",
+                                                               "40-44",
+                                                               "45-49",
+                                                               "50-54",
+                                                               "55-59",
+                                                               "60-64",
+                                                               "65-69",
+                                                               "70-74",
+                                                               "75-79",
+                                                               "80-older")))
+data_diabete <- data_diabete |> mutate(income = factor(income, levels = c(1,2,3,4,5,6,7,8), 
+                                                       labels = c("Under $10.000",
+                                                                  "$10.000 - $15.000",
+                                                                  "$15.000 - $20.000",
+                                                                  "$20.000 - $25.000",
+                                                                  "$25.000 - $35.000",
+                                                                  "$35.000 - $50.000",
+                                                                  "$50.000 - $75.000",
+                                                                  "Over $75.000")))
+data_diabete <- data_diabete |> mutate(education = factor(education, levels = c(1,2,3,4,5,6),
+                                                          labels = c("Under or Kindergarten",
+                                                                     "Elementary",
+                                                                     "Secondary and Some High School",
+                                                                     "High School graduate",
+                                                                     "College",
+                                                                     "College graduate")))
+```
+
+
+Chọn dữ liệu để xây dựng mô hình:
+
+```{r}
+selected_data <- data_diabete |> dplyr::select(top_features, diabetes_type)
+glimpse(selected_data)
+```
+
+```{r}
+table(selected_data['diabetes_type'])
+```
+
+Train-Test Split:
+
+```{r}
+set.seed(123)
+
+min_count <- min(table(selected_data$diabetes_type))
+test_size <- round(0.2 * min_count)
+TestSet <- selected_data |>
+  group_by(diabetes_type) |>
+  slice_sample(n = test_size) |>
+  ungroup()
+
+TrainSet <- selected_data |> filter(!row_number() %in% row_number(TestSet))
+```
+
+
+```{r}
+dim(TrainSet)
+print(table(TrainSet["diabetes_type"]))
+```
+
+```{r}
+dim(TestSet)
+print(table(TestSet["diabetes_type"]))
+```
+
+
+### Build Model
+
+#### Experiment 1: Multinominal Logistic Regression
+
+##### With Original Data
+
+```{r}
+library(nnet)
+out_md_mlogit <- multinom(diabetes_type ~ ., data = TrainSet, maxit = 1000)
+```
+
+```{r}
+pred_mlogit_test <- predict(out_md_mlogit, newdata = TestSet, type = "class")
+eval_mlogit_test <- confusionMatrix(data = pred_mlogit_test, reference = TestSet$diabetes_type)
+eval_mlogit_test
+```
+
+```{r}
+eval_multi_class <- function(x) {
+  cc <- sum(diag(x))
+  sc <- sum(x)
+  pp <- colSums(x)
+  tt <- rowSums(x)
+  ##
+  prec <- diag(x)/colSums(x)
+  recall <- diag(x)/rowSums(x)
+  macro_prec <- mean(prec)
+  macro_recall <- mean(recall)
+  macro_f1 <- 2 * macro_prec * macro_recall/(1/macro_prec + 1/macro_recall)
+  acc <- cc/sc
+  kap <- (cc * sc - sum(pp * tt))/(sc^2 - sum(pp * tt))
+  return(list(Precision = prec, Recall = recall, Accuracy = acc, Kappa = kap,
+  Macro_F1 = macro_f1))
+}
+eval_multi_class(table(TestSet$diabetes_type, pred_mlogit_test))
+```
+
+**Nhận xét:** Vì có sự mất cân bằng dữ liệu nên làm cho mô hình không thể dự đoán được các lớp tiền tiểu đường, dẫn đến các chỉ số mô hình bị rỗng.  
+
+Kiểm tra số lượng dữ liệu của từng nhãn:
+```{r}
+table(data_diabete["diabetes_type"])
+```
+
+
+```{r fig.height=6, fig.width=10}
+pie_data <- data_diabete |>
+  count(diabetes_type) |>
+  mutate(percentage = n/sum(n)*100)
+pie_db_type <- ggplot(pie_data, aes(x="", y=percentage, fill=diabetes_type)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_bw()
+
+bar_db_type <- ggplot(data_diabete, aes(x=diabetes_type, fill=diabetes_type)) +
+  geom_bar() +
+  theme_bw()
+
+grid.arrange(pie_db_type, bar_db_type, ncol = 2)
+```
+
+##### Experiment 1.1: With Random Under Sampling:
+
+```{r}
+under_sampling <- function(data, name_class){
+  new_data <- data
+  class_fact <- data[, name_class]
+  data_split <- split(data, class_fact)
+  n_class <- sapply(data_split, FUN = nrow)
+  n_minor <- min(n_class)
+  n_major <- max(n_class)
+  id_major_class <- which.max(n_class)
+  id_minor_class <- which.min(n_class)
+  rs_data <- lapply(data_split, function(class_data){
+    class_data[sample(1:nrow(class_data), size = n_minor, replace = FALSE),]
+  })
+  new_data <- do.call(rbind,rs_data)
+  return(new_data)
+}
+```
+
+```{r}
+TrainSet_us <- under_sampling(TrainSet,"diabetes_type")
+table(TrainSet_us["diabetes_type"])
+```
+
+```{r}
+out_md_mlogit_us <- multinom(diabetes_type ~ ., data = TrainSet_us, maxit = 1000)
+pred_us <- predict(out_md_mlogit_us, newdata = TestSet, type = "class")
+eval_us <- confusionMatrix(data = pred_us, reference = TestSet$diabetes_type)
+eval_us
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_us))
+```
+
+##### Experiment 1.2: With Random Over Sampling:
+
+```{r}
+over_sampling <- function(data, name_class){
+  new_data <- data
+  class_fact <- data[, name_class]
+  data_split <- split(data, class_fact)
+  n_class <- sapply(data_split, FUN = nrow)
+  n_minor <- min(n_class)
+  n_major <- max(n_class)
+  id_major_class <- which.max(n_class)
+  id_minor_class <- which.min(n_class)
+  rs_data <- lapply(data_split, function(class_data){
+    n <- nrow(class_data)
+    if (n < n_major) {
+      class_data[sample(1:n, size = n_major, replace = TRUE), ]
+    } else {
+      class_data
+    }
+  })
+  new_data <- do.call(rbind,rs_data)
+  return(new_data)
+}
+```
+
+```{r}
+TrainSet_os <- over_sampling(TrainSet,"diabetes_type")
+table(TrainSet_os["diabetes_type"])
+```
+
+```{r}
+out_md_mlogit_os <- multinom(diabetes_type ~ ., data = TrainSet_os, maxit = 1000)
+pred_os <- predict(out_md_mlogit_os, newdata = TestSet, type = "class")
+eval_os <- confusionMatrix(data = pred_os, reference = TestSet$diabetes_type)
+eval_os
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_os))
+```
+
+
+##### Experiment 1.3: With SMOTE:
+
+```{r}
+TrainSet_smote <- smotenc(TrainSet, var = "diabetes_type",
+                          k = 10, over_ratio = 1)
+table(TrainSet_smote["diabetes_type"])
+```
+
+```{r}
+out_md_mlogit_smote <- multinom(diabetes_type ~ ., data = TrainSet_smote, maxit = 1000)
+pred_smote <- predict(out_md_mlogit_smote, newdata = TestSet, type = "class")
+eval_smote <- confusionMatrix(data = pred_smote, reference = TestSet$diabetes_type)
+eval_smote
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_smote))
+```
+
+##### Experiment 1.4: Class Weight
+
+```{r}
+class_counts <- table(TrainSet$diabetes_type)
+class_weights <- nrow(TrainSet) / class_counts
+class_weights
+```
+
+```{r}
+weights <- as.vector(class_weights[TrainSet$diabetes_type])
+length(weights)
+```
+
+```{r}
+out_md_mlogit_w <- multinom(diabetes_type ~ ., data = TrainSet, weights = weights)
+```
+
+```{r}
+pred_w <- predict(out_md_mlogit_w, newdata = TestSet, type = "class")
+eval_w <- confusionMatrix(data = pred_w, reference = TestSet$diabetes_type)
+eval_w
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_w))
+```
+
+##### Experiment 1.5: Combine UnderSampling with SMOTE
+
+UnderSampling về trung bình số lượng 3 nhóm trong tập dữ liệu, sau đó sử dụng SMOTE để data generation các nhóm có cỡ mẫu thấp hơn về mức trung bình.  
+
+```{r}
+# Under Sampling
+new_data <- TrainSet
+class_fact <- TrainSet[, "diabetes_type"]
+data_split <- split(TrainSet, class_fact)
+n_class <- sapply(data_split, FUN = nrow)
+n_major <- max(n_class)
+id_major_class <- which.max(n_class)
+id_major <- sample(1:n_major, size = mean(nrow(TrainSet)/3), replace = FALSE)
+new_data_major <- data_split[[id_major_class]][id_major, ]
+new_data <- rbind(data_split[[2]], new_data_major, data_split[[3]])
+# SMOTE
+TrainSet_cmb <- smotenc(new_data, var = "diabetes_type",
+                        k = 5, over_ratio = 1)
+table(TrainSet_cmb["diabetes_type"])
+```
+
+```{r}
+out_md_mlogit_cmb <- multinom(diabetes_type ~ ., data = TrainSet_cmb, maxit = 1000) 
+pred_cmb <- predict(out_md_mlogit_cmb, newdata = TestSet, type = "class")
+eval_cmb <- confusionMatrix(data = pred_cmb, reference = TestSet$diabetes_type)
+eval_cmb
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_cmb))
+```
+
+##### Experiment 1.6: Combine UnderSampling with OverSampling
+
+```{r}
+TrainSet_cmb_os <- over_sampling(new_data, "diabetes_type")
+table(TrainSet_cmb_os["diabetes_type"])
+```
+
+```{r}
+out_md_mlogit_cmb_os <- multinom(diabetes_type ~ ., data = TrainSet_cmb_os, maxit = 1000) 
+pred_cmb_os <- predict(out_md_mlogit_cmb_os, newdata = TestSet, type = "class")
+eval_cmb_os <- confusionMatrix(data = pred_cmb_os, reference = TestSet$diabetes_type)
+eval_cmb_os
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type,pred_cmb_os))
+```
+
+So sánh các chỉ số mô hình của các lần thử nghiệm, các thông số Macro-F1 và Kappa đều gần xấp xỉ nhau. Tuy nhiên, Vì dữ liệu bị mất cân bằng nghiêm trọng, sử dụng các phương pháp khác sẽ làm dữ liệu bị mất tính đa dạng hay bị lặp, nên nhóm quyết định sẽ chọn ra Combine Data, tức là dữ liệu được xử lý mất cân bằng bằng cách kết hợp Undersampling cho nhãn nhiều dữ liệu nhất về trung bình và SMOTE cho hai nhãn còn lại, huấn luyện trên các mô hình khác để tiếp tục kết quả tốt nhất.  
+
+#### Experiment 2: Random Forest with Combine Data
+
+```{r}
+library(randomForest)
+out_md_RF <- randomForest(diabetes_type ~ ., data = TrainSet_cmb)
+```
+
+```{r}
+pred_RF <- predict(out_md_RF, newdata = TestSet, type = "class")
+eval_RF <- confusionMatrix(data = pred_RF, reference = TestSet$diabetes_type)
+eval_RF
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_RF))
+```
+
+#### Experiment 3: Naive Bayes
+
+```{r}
+library(klaR)
+out_md_NB <- NaiveBayes(diabetes_type ~ ., data = TrainSet_cmb)
+```
+
+```{r message=FALSE, warning=FALSE}
+pred_NB <- predict(out_md_NB, newdata = TestSet)$class
+eval_NB <- confusionMatrix(pred_NB,TestSet$diabetes_type)
+eval_NB
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_NB))
+```
+
+
+
+#### Choosing Best Model
+
+Mô hình giải thích tốt nhất tất cả các biến là Random Forest với Combine Data (Undersampling + SMOTE) với kết quả đạt:  
+
+```{r echo=FALSE}
+eval_multi_class(table(TestSet$diabetes_type,pred_RF))
+```
+
+
+## 2. Multi-Classification only with Health Indicator
+
+Trong phần này, chúng ta sẽ lọc ra những chỉ số đo lường sức khỏe có mức độ tương quan cao nhất để xây dựng một mô hình chẩn đoán bệnh tiểu đường.  
+
+```{r}
+top_features
+```
+
+Như trong phần mô tả, các biến sau:  
++ gen_hlth: chỉ số đánh giá sức khỏe tổng quát scale từ 1 -> 5, từ rất tốt tới rất tệ
++ high_bp: tình trạng cao huyết áp  
++ bmi: chỉ số khối của cơ thể   
++ diff_walk: có gặp khó khăn trong việc đi lại hay không  
++ high_chol: tình trạng cao cholesterol  
++ heart_diseaseor_attack: tiền sử bị các bệnh về tim  
++ phys_hlth: sức khỏe tổng quát   
+
+được xem như là các chỉ số sức khỏe của con người tại một thời điểm. Ta sẽ chọn các biến này để xem xem liệu một người có những triệu chứng này có dễ mắc bệnh tiểu  đường hơn không.  
+
+### Multi Logistic Regression
+```{r}
+out_md_mlogit_hlth <- multinom(diabetes_type ~ gen_hlth + high_bp + bmi + diff_walk + high_chol + heart_diseaseor_attack + phys_hlth, 
+                               data = TrainSet_cmb, maxit = 1000) 
+pred_hlth <- predict(out_md_mlogit_hlth, newdata = TestSet, type = "class")
+eval_hlth <- confusionMatrix(data = pred_hlth, reference = TestSet$diabetes_type)
+eval_hlth
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_hlth))
+```
+
+### Random Forest
+
+```{r}
+out_md_RF_hlth <- randomForest(diabetes_type ~., data = TrainSet_cmb)
+summary(out_md_RF_hlth)
+```
+
+```{r}
+pred_RF_hlth <- predict(out_md_RF_hlth, newdata = TestSet, type = "class")
+eval_RF_hlth <- confusionMatrix(data = pred_RF_hlth, reference = TestSet$diabetes_type)
+eval_RF_hlth
+```
+
+```{r}
+eval_multi_class(table(TestSet$diabetes_type, pred_RF_hlth))
+```
+
+
+### Results
+
+Mô hình chỉ sử dụng các biến liên quan đến chỉ số sức khoẻ cho kết quả dự đoán tốt hơn so với mô hình dùng các biến có sự tương quan tốt với biến mục tiêu. Điều đó, cho thấy tình trạng sức khoẻ tác động mạnh mẽ lên nguy cơ mắc bệnh.  
+
+Mô hình Random Forest với combine data đạt kết quả:  
+
+```{r echo=FALSE}
+eval_multi_class(table(TestSet$diabetes_type, pred_RF_hlth))
+```
+
+
+## 3. Exploring Pre-diabete class and Diabete class
+
+```{r}
+table(data$diabetes_type)
+```
+
+Khi phân ra ba lớp, các mô hình gặp khó khăn trong việc dự đoán tốt các nhãn, do dữ liệu về lớp `Pre-diabete` quá ít so với hai lớp còn lại. Kể cả khi đi xử lý mất cân bằng dữ liệu, thì các phương pháp dường như đều vướng phải khuyết điểm.  
+
+Điều này đưa ta đi đến giả thuyết rằng, **liệu ta có thể tiếp cận bài toán nhị phân chỉ gồm hai nhãn "Non-diabete" và "Diabete" để giúp cho mô hình có thể phán đoán chính xác hơn không?**  
+
+Theo kết quả trong phần trực quan, các chỉ số kết quả cho thấy gần như không có sự khác biệt giữa hai nhóm `Pre-diabete` và `Diabete`.  
+
+
+## 4. Binary-Classification for Non-diabete or Diabete
+
+Ý tưởng: Gộp 2 nhóm Pre-Diabete và Diabete thành Diabete nói chung. Sau đó xử lý mất cân bằng dữ liệu bằng cách UnderSampling nhóm Non-diabete về mức ngang tổng của hai nhóm còn lại.  
+
+```{r}
+data_binary <- data
+data_binary$diabetes_type <- ifelse(data_binary$diabetes_type == 0, 0, 1)
+glimpse(data_binary)
+```
+
+```{r}
+table(data_binary$diabetes_type)
+```
+
+### Correlation
+
+```{r}
+corr_binary <- cor(data_binary[,-1], data_binary[,1])
+corr_binary
+```
+
+```{r}
+top_features <- names(sort(abs(corr[,1]), decreasing = TRUE))[1:10]
+top_features
+```
+
+Không có sự khác biệt với model multi-classification. Sử dụng lại bộ data bên trên.  
+
+```{r}
+data_binary <- selected_data
+data_binary$diabetes_type <- ifelse(data_binary$diabetes_type == "Non-diabete", 0, 1)
+data_binary <- data_binary |> mutate(diabetes_type = factor(diabetes_type, levels = c(0,1),
+                                                            labels = c("Non-diabete",
+                                                                       "Diabete")))
+glimpse(data_binary)
+```
+
+### Handling Imbalanced Data
+
+Undersampling `Non-diabete` về cùng cỡ mẫu với `Diabete`:
+```{r}
+under_sampling_2c <- function(data, name_class) {
+  class_fact <- as.factor(data[[name_class]])
+  
+  data_split <- split(data, class_fact)
+  n_class <- sapply(data_split, FUN = nrow)
+  
+  n_minor <- min(n_class)
+  n_major <- max(n_class)
+  id_major_class <- which.max(n_class)
+  id_minor_class <- which.min(n_class)
+  
+  id_major <- sample(1:n_major, size = n_minor, replace = FALSE)
+  new_data_major <- data_split[[id_major_class]][id_major, ]
+  
+  new_data <- rbind(data_split[[id_minor_class]], new_data_major)
+  return(new_data)
+}
+set.seed(234)
+data_binary <- under_sampling_2c(data_binary,"diabetes_type")
+table(data_binary$diabetes_type)
+```
+
+### Train-test split
+```{r}
+set.seed(123)
+library(caTools)
+spl <- sample.split(data_binary$diabetes_type, SplitRatio = 0.8)
+TrainSet_binary <- subset(data_binary, spl==TRUE)
+TestSet_binary <- subset(data_binary, spl==FALSE)
+```
+
+```{r}
+table(TestSet_binary$diabetes_type)
+```
+
+```{r}
+dim(TrainSet_binary)
+```
+
+```{r}
+dim(TestSet_binary)
+```
+
+### Binary Classification Model
+
+#### Logistic Regression
+
+```{r}
+glm_md <- glm(formula = diabetes_type ~ ., 
+              data = TrainSet_binary, family = binomial)
+summary(glm_md)
+```
+
+Kiểm tra đa cộng tuyến
+```{r}
+library(car)
+vif(glm_md)
+```
+Không có đa cộng tuyến.
+
+```{r}
+glm_pred_prob <- predict(glm_md, newdata = TestSet_binary, type = 'response')
+glm_pred <- ifelse(glm_pred_prob >= 0.6, "Diabete", "Non-diabete")
+confusionMatrix(as.factor(glm_pred), TestSet_binary$diabetes_type, positive="Non-diabete")
+```
+
+```{r}
+library(pROC)
+roc_glm <- roc(TestSet_binary$diabetes_type, glm_pred_prob)
+auc_glm <- auc(roc_glm)
+print(auc_glm)
+```
+
+
+```{r}
+plot(roc_glm, legacy.axes=TRUE, main="ROC Curve for Logistic Regression", asp=0, col="forestgreen")
+```
+
+#### Random Forest
+
+```{r}
+rf_md <- randomForest(formula = diabetes_type ~., data= TrainSet_binary, ntree=500)
+summary(rf_md)
+```
+
+```{r}
+rf_pred_prob <- predict(rf_md, newdata = TestSet_binary, type="prob")
+rf_pred <- ifelse(rf_pred_prob[,"Diabete"] > 0.6, "Diabete", "Non-diabete")
+confusionMatrix(as.factor(rf_pred), TestSet_binary$diabetes_type, positive = "Non-diabete")
+```
+
+```{r}
+# ROC
+roc_rf <- roc(TestSet_binary$diabetes_type, rf_pred_prob[, "Diabete"], 
+              levels = c("Diabete", "Non-diabete"), direction = ">")
+
+# AUC
+auc_rf <- auc(roc_rf)
+print(auc_rf)
+```
+
+```{r}
+plot(roc_rf, legacy.axes=TRUE, main="ROC Curve for Random Forest", col="forestgreen" , asp=0)
+```
+
+#### NaiveBayes
+
+```{r}
+nb_md <- NaiveBayes(formula = diabetes_type ~ ., data = TrainSet_binary)
+summary(nb_md)
+```
+
+```{r message=FALSE, warning=FALSE}
+nb_pred_prob <- predict(nb_md, newdata = TestSet_binary, type="raw")$posterior
+nb_pred <- ifelse(nb_pred_prob[, "Diabete"] > 0.6, "Diabete", "Non-diabete")
+confusionMatrix(as.factor(nb_pred),TestSet_binary$diabetes_type)
+```
+
+```{r}
+roc_nb <- roc(TestSet_binary$diabetes_type, nb_pred_prob[, "Diabete"], 
+              levels = c("Diabete", "Non-diabete"), direction = ">")
+
+auc_nb <- auc(roc_nb)
+print(auc_nb)
+```
+
+```{r}
+plot(roc_nb, legacy.axes=TRUE, main = "ROC Curve for Naive Bayes", col = "forestgreen", asp=0)
+```
+
+### Conclusion  
+
+- Mô hình phân loại nhị phân cho kết quả tốt hơn hẳn so với mô hình phân loại đa biến. Điều này cho thấy mô hình có thể chuẩn đoán tốt giữa `Non-diabete` và `Diabete`.  
+
+- Mô hình tốt nhất cho bài toán phân loại nhị phân là Logistic Regression với dữ liệu Undersampling. Kết quả đánh giá model dựa trên ROC curve như sau:  
+
+```{r echo=FALSE}
+plot(roc_glm, legacy.axes=TRUE, main="ROC Curve for Logistic Regression", asp=0, col="forestgreen")
+```
+
+```{r echo=FALSE}
+auc_glm
+```
+
+Hiệu suất phân loại của mô hình đạt chỉ số đánh giá tốt > 0.8. Hoàn toàn có thể tin tưởng.  
+
+## 5. Conclusion
+
+Kết quả thu được tốt nhất sau cùng của bài toán phân nhãn này là:  
+
+- Đối với bài toán phân loại đa nhóm:  
+  - Tập data: chỉ gồm các biến `Health indicator`, xử lý imbalanced data bằng cách **undersampling về trung bình cho tập lớn, smote cho hai nhóm nhỏ hơn**.  
+  - Mô hình tốt nhất: Random Forest.  
+
+- Đối với bài toán phân loại nhị phân (Non-diabete vs Diabete):    
+  - Tập data: 10 biến có chỉ số tương quan, xử lý imbalanced data bằng cách **undersampling**.    
+  - Mô hình tốt nhất: Logistic Regression.  
+
+
+
+
+
+
+
