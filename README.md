@@ -4,8 +4,6 @@
 
 This project focuses on analyzing and building robust classification models to predict the risk of diabetes based on the Centers for Disease Control and Prevention (CDC) Health Indicators dataset.
 
-The main objectives were to establish the relationship between key health factors and the target variable, and to develop accurate models capable of handling severe class imbalance inherent in health survey data.
-
 ## 2. Key Tasks & Project Features
 
 * **Exploratory Data Analysis (EDA):** Performed extensive data exploration to extract insights and confirm the statistical relationship between health features and the diabetes outcome.
