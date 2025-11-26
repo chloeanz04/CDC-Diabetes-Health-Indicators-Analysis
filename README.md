@@ -29,11 +29,5 @@ This project focuses on analyzing and building robust classification models to p
 | **Binary (2 states)** | Logistic Regression | AUC | **0.8113** |
 | | | Accuracy | **72.56%** |
 
-## 5. Technology Stack
-
-* **Languages:** R, Python
-* **R Libraries:** `caret`, `randomForest`
-* **Python Libraries (for Data Science context):** `scikit-learn`, `pandas`, `numpy` (Assumed based on project type)
-
 ---
 *This project was completed by Group 11 in January 2025.*
