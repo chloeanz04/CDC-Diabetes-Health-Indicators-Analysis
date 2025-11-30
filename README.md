@@ -1,17 +1,17 @@
 # [R] CDC Diabetes Health Indicators Analysis - Predictive Modeling
 
-## 1. Introduction
+## Introduction
 
 This project focuses on analyzing and building robust classification models to predict the risk of diabetes based on the Centers for Disease Control and Prevention (CDC) Health Indicators dataset.
 
-## 2. Key Tasks & Project Features
+## Key Tasks & Project Features
 
 * **Exploratory Data Analysis (EDA):** Performed extensive data exploration to extract insights and confirm the statistical relationship between health features and the diabetes outcome.
 * **Data Preprocessing & Imbalance Handling:** Applied advanced sampling techniques to address the severe class imbalance, a critical step for developing reliable predictive models.
 * **Multi-class Classification Model:** Developed a model to predict three diabetes risk states: Non-diabetic, Pre-diabetic, and Diabetic.
 * **Binary Classification Model:** Simplified the problem to classify individuals into 'Non-diabetic' vs. 'Diabetic or Pre-diabetic' for broader risk assessment.
 
-## 3. Methodology & Techniques
+## Methodology & Techniques
 
 | Phase | Method/Technique Used | Description |
 | :--- | :--- | :--- |
@@ -20,7 +20,7 @@ This project focuses on analyzing and building robust classification models to p
 | **Multi-class Model** | Random Forest | Optimized and selected **Random Forest** as the best model for 3-state prediction, trained exclusively on Health Indicator variables. |
 | **Binary Model** | Logistic Regression | Transformed the problem to binary and utilized **Undersampling** to train a highly effective **Logistic Regression** model. |
 
-## 4. Key Results
+## Key Results
 
 | Model Type | Best Model Selected | Evaluation Metric | Result |
 | :--- | :--- | :--- | :--- |
@@ -28,6 +28,3 @@ This project focuses on analyzing and building robust classification models to p
 | | | Kappa | **0.66** |
 | **Binary (2 states)** | Logistic Regression | AUC | **0.8113** |
 | | | Accuracy | **72.56%** |
-
----
-*This project was completed by Group 11 in January 2025.*
