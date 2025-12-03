@@ -1,6 +1,6 @@
 # [R] CDC Diabetes Health Indicators Analysis - Predictive Modeling
 
-## Introduction
+## Overview
 
 This project focuses on analyzing and building robust classification models to predict the risk of diabetes based on the Centers for Disease Control and Prevention (CDC) Health Indicators dataset.
 
