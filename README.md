@@ -17,9 +17,12 @@ This project focuses on analyzing and building robust classification models to p
   - 2: Diabetes  
 - **Class imbalance:** Severe; Non-diabetes (213,703) >> Pre-diabetes (4,631) + Diabetes (35,346)  
 - **Features:** 21 variables including health indicators, lifestyle, and demographics  
-  - Quantitative: `bmi`, `men_hlth`, `phys_hlth`  
+  - Quantitative:  
+    - `bmi` – body mass index  
+    - `men_hlth` – number of days in past 30 days mental health was not good  
+    - `phys_hlth` – number of days in past 30 days physical health was not good  
+    - `gen_hlth` – general health rating (1: excellent → 5: poor)
   - Qualitative: remaining 18 variables (e.g., `high_bp`, `high_chol`, `smoker`, `stroke`, `age`, `sex`, `education`)  
-- **Time context:** Some features reference the last 30 days or 5 years (e.g., exercise, cholesterol check)
 
 
 ---
