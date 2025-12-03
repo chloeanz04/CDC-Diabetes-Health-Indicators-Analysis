@@ -19,9 +19,9 @@ This project focuses on analyzing and building robust classification models to p
 
 | Phase | Method/Technique Used | Description |
 | :--- | :--- | :--- |
-| **Data Preprocessing** | Data Cleaning & Variable Selection |<br>• Renamed necessary variables <br>• Removed duplicates <br>• Classified variables into quantitative and qualitative types to support subsequent analysis. |
+| **Data Preprocessing** | Data Cleaning & Variable Selection | <br>• Renamed necessary variables <br>• Removed duplicates <br>• Classified variables into quantitative and qualitative types to support subsequent analysis. |
 | **Data Visualization** | EDA (Histograms, Boxplots, Density Plots) | Explored data distributions and characteristics to inform further analysis steps. |
-| **AB Testing** | Resampling & Permutation ANOVA | Applied AB testing methods: resampling to check independence of qualitative variables and permutation ANOVA to assess group differences when traditional ANOVA assumptions are not met. |
+| **AB Testing** | Resampling & Permutation ANOVA | Applied AB testing methods: <br>• Resampling method: Check independence of qualitative variables <br>• Permutation ANOVA to assess group differences when traditional ANOVA assumptions are not met. |
 | **Handling Imbalanced Data** | Sampling Techniques | Among all methods evaluated (Undersampling, Oversampling, SMOTE, Class Weight, and their combinations), the **combination method (Undersampling + SMOTE / Undersampling + Oversampling)** performed the best overall, achieving Accuracy: 0.51, Kappa: 0.27, Macro-F1: 0.13. |
 | **Multi-class Modeling** | Logistic Regression, Random Forest, Naive Bayes | Predicted diabetes status (`Non-diabetes`, `Pre-diabetes`, `Diabetes`) using: <br>• Top 10 variables most correlated with the target <br>• Health indicators only (`gen_hlth`, `high_bp`, `bmi`, `diff_walk`, `high_chol`, `heart_diseaseor_attack`, `phys_hlth`). |
 | **Binary Modeling** | Logistic Regression, Random Forest, Naive Bayes | Simplified the task to a binary classification problem (diabetes vs. non-diabetes) due to the low number of Pre-diabetes cases. Applied sampling techniques to train effective models and identify the best-performing binary classifier. |
