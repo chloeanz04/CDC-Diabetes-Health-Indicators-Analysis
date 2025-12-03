@@ -19,7 +19,7 @@ This project focuses on analyzing and building robust classification models to p
 
 | Phase | Method/Technique Used | Description |
 | :--- | :--- | :--- |
-| **Data Preprocessing** | Data Cleaning & Variable Selection | <br>• Renamed necessary variables <br>• Removed duplicates <br>• Classified variables into quantitative and qualitative types to support subsequent analysis. |
+| **Data Preprocessing** | Data Cleaning & Variable Selection |<br>• Renamed necessary variables <br>• Removed duplicates <br>• Classified variables into quantitative and qualitative types to support subsequent analysis. |
 | **Data Visualization** | EDA (Histograms, Boxplots, Density Plots) | Explored data distributions and characteristics to inform further analysis steps. |
 | **AB Testing** | Resampling & Permutation ANOVA | Applied AB testing methods: resampling to check independence of qualitative variables and permutation ANOVA to assess group differences when traditional ANOVA assumptions are not met. |
 | **Handling Imbalanced Data** | Sampling Techniques | Among all methods evaluated (Undersampling, Oversampling, SMOTE, Class Weight, and their combinations), the **combination method (Undersampling + SMOTE / Undersampling + Oversampling)** performed the best overall, achieving Accuracy: 0.51, Kappa: 0.27, Macro-F1: 0.13. |
