@@ -30,7 +30,7 @@ This project focuses on analyzing and building robust classification models to p
 
 ## Results
 <p align="center">
-  <strong>A/B testing</strong>
+  <strong>1. A/B testing</strong>
 </p>
 
 **Qualitative Variables:** All showed p-values close to 0.  
@@ -57,7 +57,7 @@ Although all independent variables are statistically significant, optimizing the
 - **Feature Importance Assessment:** Use feature importance metrics and analyze coefficients to evaluate the influence of each variable on predictions.
 
 <p align="center">
-  <strong>Multi-class classification problem with highly correlated features</strong>
+  <strong>2. Multi-class classification problem with highly correlated features</strong>
 </p>
 
 <div align="center">
@@ -81,7 +81,7 @@ Although all independent variables are statistically significant, optimizing the
 The **Random Forest** model is the most suitable for accurately predicting diabetes status based on input features. This allows for early detection of the disease and provides patients with appropriate treatment options tailored to their current condition.
 
 <p align="center">
-  <strong>Multi-class classification problem with health-related features</strong>
+  <strong>3. Multi-class classification problem with health-related features</strong>
 </p>
 
 <div align="center">
@@ -99,7 +99,7 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
 
 
 <p align="center">
-  <strong>Binary classification problem</strong>
+  <strong>4. Binary classification problem</strong>
 </p>
 
 <div align="center">
