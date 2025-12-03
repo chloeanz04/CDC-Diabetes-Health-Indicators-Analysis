@@ -26,11 +26,13 @@ This project focuses on analyzing and building robust classification models to p
 </p>
 
 <div align="center">
+
 | Model                         | Accuracy | Kappa   | Macro-F1 |
 |-------------------------------|---------|---------|----------|
 | Multinomial Logistic Regression | 0.5148  | 0.2721  | 0.1344   |
 | Random Forest                  | 0.7739  | 0.6609  | 0.4669   |
 | Naive Bayes                    | 0.5007  | 0.2511  | 0.1217   |
+
 </div>
 
 **Observations:**  
