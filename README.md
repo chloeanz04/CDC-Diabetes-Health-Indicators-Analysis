@@ -21,10 +21,22 @@ This project focuses on analyzing and building robust classification models to p
 | **Binary Model** | Logistic Regression | Transformed the problem to binary and utilized **Undersampling** to train a highly effective **Logistic Regression** model. |
 
 ## Key Results
+- **Multi-class classification problem with a highly correlated dataset**: 
 
-| Model Type | Best Model Selected | Evaluation Metric | Result |
-| :--- | :--- | :--- | :--- |
-| **Multi-class (3 states)** | Random Forest | Accuracy | **77.6%** |
-| | | Kappa | **0.66** |
+| Model                         | Accuracy | Kappa   | Macro-F1 |
+|-------------------------------|---------|---------|----------|
+| Multinomial Logistic Regression | 0.5148  | 0.2721  | 0.1344   |
+| Random Forest                  | 0.7739  | 0.6609  | 0.4669   |
+| Naive Bayes                    | 0.5007  | 0.2511  | 0.1217   |
+**Observations:**  
+- Both **Multinomial Logistic Regression** and **Naive Bayes** performed poorly, with similar evaluation metrics at quite low levels, especially **Macro-F1**, which was below 0.15.  
+- **Random Forest**, however, showed much better performance:  
+  - **Accuracy (0.7739):** With nearly 77.4% correct predictions, the model achieves relatively high accuracy.  
+  - **Kappa (0.6609):** Indicates that model predictions depend on the true classes, but due to label imbalance, this value cannot be very high.  
+  - **Macro-F1 (0.4669):** Still somewhat low, indicating the model does not perfectly balance predictions across all classes.
+
+**Conclusion:**  
+The **Random Forest** model is the most suitable for accurately predicting diabetes status based on input features. This allows for early detection of the disease and provides patients with appropriate treatment options tailored to their current condition.
+
 | **Binary (2 states)** | Logistic Regression | AUC | **0.8113** |
 | | | Accuracy | **72.56%** |
