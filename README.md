@@ -54,8 +54,6 @@ Although all independent variables are statistically significant, optimizing the
 - **Data Balancing:** To prevent bias towards majority classes (e.g., "Non-Diabetes"), ensure minority groups ("Pre-Diabetes" and "Diabetes") are adequately represented without reducing overall model performance.  
 - **Feature Importance Assessment:** Use feature importance metrics and analyze coefficients to evaluate the influence of each variable on predictions.
 
-<div align="center">
-
 <p align="center">
   <strong>Multi-class classification problem with highly correlated features</strong>
 </p>
