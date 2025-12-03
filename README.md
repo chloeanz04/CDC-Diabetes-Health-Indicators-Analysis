@@ -23,16 +23,6 @@ This project focuses on analyzing and building robust classification models to p
     - `phys_hlth` – number of days in past 30 days physical health was not good  
   - Qualitative: remaining 18 variables (e.g., `high_bp`, `high_chol`, `smoker`, `stroke`, `age`, `sex`, `education`)  
 
-
----
-
-## Key Tasks & Project Features
-
-* **Exploratory Data Analysis (EDA):** Performed extensive data exploration to extract insights and confirm the statistical relationship between health features and the diabetes outcome.
-* **Data Preprocessing & Imbalance Handling:** Applied advanced sampling techniques to address the severe class imbalance, a critical step for developing reliable predictive models.
-* **Multi-class Classification Model:** Developed a model to predict three diabetes risk states: Non-diabetic, Pre-diabetic, and Diabetic.
-* **Binary Classification Model:** Simplified the problem to classify individuals into 'Non-diabetic' vs. 'Diabetic or Pre-diabetic' for broader risk assessment.
-
 ---
 
 ## Methodology
