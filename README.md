@@ -22,7 +22,7 @@ This project focuses on analyzing and building robust classification models to p
 
 ## Key Results
 <p align="center">
-  <strong>Multi-class classification problem with a highly correlated dataset</strong>
+  <strong>Multi-class classification problem with highly correlated features</strong>
 </p>
 
 <div align="center">
@@ -44,6 +44,10 @@ This project focuses on analyzing and building robust classification models to p
 
 **Conclusion:**  
 The **Random Forest** model is the most suitable for accurately predicting diabetes status based on input features. This allows for early detection of the disease and provides patients with appropriate treatment options tailored to their current condition.
+
+<p align="center">
+  <strong>Multi-class classification problem with health-related features</strong>
+</p>
 
 | **Binary (2 states)** | Logistic Regression | AUC | **0.8113** |
 | | | Accuracy | **72.56%** |
