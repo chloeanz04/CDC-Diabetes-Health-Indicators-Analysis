@@ -49,12 +49,14 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
   <strong>Multi-class classification problem with health-related features</strong>
 </p>
 
-## Model Performance
+<div align="center">
 
 | Model                         | Accuracy | Kappa   | Macro-F1 |
 |-------------------------------|---------|---------|----------|
 | Multinomial Logistic Regression | 0.5058  | 0.2586  | 0.1252   |
 | Random Forest                  | 0.7761  | 0.6641  | 0.4704   |
+
+</div>
 
 **Observations:**  
 - The **Random Forest** model has a Macro-F1 score nearly four times higher than that of **Multinomial Logistic Regression**, indicating better handling and balance across classes.  
