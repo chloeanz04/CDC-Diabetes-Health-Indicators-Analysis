@@ -78,3 +78,6 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
 <img width="468" height="563" alt="image" src="https://github.com/user-attachments/assets/80812c4a-ec2f-42a9-9a02-b074e5808a42" />
 
 </div>
+
+**Observations:**
+The **Logistic Regression** model achieved an **AUC of 0.81**, indicating good and reliable discriminative ability between classes.
