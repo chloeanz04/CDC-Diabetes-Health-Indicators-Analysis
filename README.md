@@ -6,6 +6,24 @@ This project focuses on analyzing and building robust classification models to p
 
 ---
 
+## Dataset
+
+- **File:** `diabetes_012_health_indications_BRFSS2015.csv`  
+- **Source:** BRFSS 2015 survey by CDC  
+- **Size:** 253,680 survey responses  
+- **Target variable:** `diabetes_012` (3 classes)  
+  - 0: Non-diabetes  
+  - 1: Pre-diabetes  
+  - 2: Diabetes  
+- **Class imbalance:** Severe; Non-diabetes (213,703) >> Pre-diabetes (4,631) + Diabetes (35,346)  
+- **Features:** 21 variables including health indicators, lifestyle, and demographics  
+  - Quantitative: `bmi`, `men_hlth`, `phys_hlth`  
+  - Qualitative: remaining 18 variables (e.g., `high_bp`, `high_chol`, `smoker`, `stroke`, `age`, `sex`, `education`)  
+- **Time context:** Some features reference the last 30 days or 5 years (e.g., exercise, cholesterol check)
+
+
+---
+
 ## Key Tasks & Project Features
 
 * **Exploratory Data Analysis (EDA):** Performed extensive data exploration to extract insights and confirm the statistical relationship between health features and the diabetes outcome.
