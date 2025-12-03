@@ -21,7 +21,9 @@ This project focuses on analyzing and building robust classification models to p
 | **Binary Model** | Logistic Regression | Transformed the problem to binary and utilized **Undersampling** to train a highly effective **Logistic Regression** model. |
 
 ## Key Results
-- **Multi-class classification problem with a highly correlated dataset**: 
+<p align="center">
+  **Multi-class classification problem with a highly correlated dataset**: 
+</p>
 
 | Model                         | Accuracy | Kappa   | Macro-F1 |
 |-------------------------------|---------|---------|----------|
