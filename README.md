@@ -4,12 +4,16 @@
 
 This project focuses on analyzing and building robust classification models to predict the risk of diabetes based on the Centers for Disease Control and Prevention (CDC) Health Indicators dataset.
 
+---
+
 ## Key Tasks & Project Features
 
 * **Exploratory Data Analysis (EDA):** Performed extensive data exploration to extract insights and confirm the statistical relationship between health features and the diabetes outcome.
 * **Data Preprocessing & Imbalance Handling:** Applied advanced sampling techniques to address the severe class imbalance, a critical step for developing reliable predictive models.
 * **Multi-class Classification Model:** Developed a model to predict three diabetes risk states: Non-diabetic, Pre-diabetic, and Diabetic.
 * **Binary Classification Model:** Simplified the problem to classify individuals into 'Non-diabetic' vs. 'Diabetic or Pre-diabetic' for broader risk assessment.
+
+---
 
 ## Methodology & Techniques
 
@@ -19,6 +23,8 @@ This project focuses on analyzing and building robust classification models to p
 | **Pre-processing** | Combined Sampling | Successfully mitigated imbalance in the multi-class problem by combining **Undersampling** (for the majority class) and **SMOTE** (for the minority classes). |
 | **Multi-class Model** | Random Forest | Optimized and selected **Random Forest** as the best model for 3-state prediction, trained exclusively on Health Indicator variables. |
 | **Binary Model** | Logistic Regression | Transformed the problem to binary and utilized **Undersampling** to train a highly effective **Logistic Regression** model. |
+
+---
 
 ## Key Results
 <p align="center">
