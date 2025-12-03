@@ -67,3 +67,14 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
 **Observations:**  
 - The **Random Forest** model has a Macro-F1 score nearly four times higher than that of **Multinomial Logistic Regression**, indicating better handling and balance across classes.  
 - Random Forest also outperforms Multinomial Logistic Regression in **Accuracy** and **Kappa**, with values of 0.7761 and 0.6641 respectively, demonstrating superior accuracy and overall performance.
+
+
+<p align="center">
+  <strong>Binary classification problem</strong>
+</p>
+
+<div align="center">
+
+<img width="468" height="563" alt="image" src="https://github.com/user-attachments/assets/80812c4a-ec2f-42a9-9a02-b074e5808a42" />
+
+</div>
