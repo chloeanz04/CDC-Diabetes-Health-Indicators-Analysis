@@ -15,14 +15,16 @@ This project focuses on analyzing and building robust classification models to p
 
 ---
 
-## Methodology & Techniques
+## Methodology
 
 | Phase | Method/Technique Used | Description |
 | :--- | :--- | :--- |
-| **Analysis** | EDA & Independence Testing | Conducted rigorous analysis, confirming all selected variables exhibited a strong correlation ($\text{p-value} < 2.2e-16$) with the target variable. |
-| **Pre-processing** | Combined Sampling | Successfully mitigated imbalance in the multi-class problem by combining **Undersampling** (for the majority class) and **SMOTE** (for the minority classes). |
-| **Multi-class Model** | Random Forest | Optimized and selected **Random Forest** as the best model for 3-state prediction, trained exclusively on Health Indicator variables. |
-| **Binary Model** | Logistic Regression | Transformed the problem to binary and utilized **Undersampling** to train a highly effective **Logistic Regression** model. |
+| **Data Preprocessing** | Data Cleaning & Variable Selection | Renamed necessary variables, removed duplicates, and classified variables into quantitative and qualitative types to support subsequent analysis. |
+| **Data Visualization** | EDA (Histograms, Boxplots, Density Plots) | Explored data distributions and characteristics to inform further analysis steps. |
+| **AB Testing** | Resampling & Permutation ANOVA | Applied AB testing methods: resampling to check independence of qualitative variables and permutation ANOVA to assess group differences when traditional ANOVA assumptions are not met. |
+| **Handling Imbalanced Data** | Sampling Techniques | Evaluated multiple approaches: Undersampling, Oversampling, SMOTE, Class Weight, and combinations (Undersampling + SMOTE / Undersampling + Oversampling). Selected the method yielding the best model performance across all classes. |
+| **Multi-class Modeling** | Logistic Regression, Random Forest, Naive Bayes | Predicted diabetes status (`Non-diabetes`, `Pre-diabetes`, `Diabetes`) using: <br>• Top 10 variables most correlated with the target <br>• Health indicators only (gen_hlth, high_bp, bmi, diff_walk, high_chol, heart_diseaseor_attack, phys_hlth). Random Forest trained on Health Indicators was selected as the optimal model. |
+| **Binary Modeling** | Logistic Regression, Random Forest, Naive Bayes | Simplified the task to a binary classification problem (diabetes vs. non-diabetes) due to the low number of Pre-diabetes cases. Applied sampling techniques to train effective models and identify the best-performing binary classifier. |
 
 ---
 
