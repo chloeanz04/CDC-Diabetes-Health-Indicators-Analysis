@@ -130,3 +130,12 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
 
 **Observations:**
 The **Logistic Regression** model achieved an **AUC of 0.81**, indicating good and reliable discriminative ability between classes.
+
+---
+
+## Conclusion
+- Diabetes risk is significantly influenced by lifestyle habits, age, education, income, and overall health indicators.  
+- For multi-class classification, using only health-related features, **Random Forest** achieves the best performance, enabling early identification of Non-diabetic, Pre-diabetic, or Diabetic individuals.  
+- For binary classification (diabetic vs. non-diabetic), **Logistic Regression** provides a reliable and interpretable model.  
+- Early detection allows individuals to adjust their lifestyle and supports healthcare professionals in making informed treatment decisions.  
+- Public health strategies should emphasize early screening, promoting healthy habits, and improving healthcare accessibility for at-risk populations.
