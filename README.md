@@ -25,11 +25,14 @@ This project focuses on analyzing and building robust classification models to p
   <strong>Multi-class classification problem with a highly correlated dataset</strong>
 </p>
 
+<div align="center">
 | Model                         | Accuracy | Kappa   | Macro-F1 |
 |-------------------------------|---------|---------|----------|
 | Multinomial Logistic Regression | 0.5148  | 0.2721  | 0.1344   |
 | Random Forest                  | 0.7739  | 0.6609  | 0.4669   |
 | Naive Bayes                    | 0.5007  | 0.2511  | 0.1217   |
+</div>
+
 **Observations:**  
 - Both **Multinomial Logistic Regression** and **Naive Bayes** performed poorly, with similar evaluation metrics at quite low levels, especially **Macro-F1**, which was below 0.15.  
 - **Random Forest**, however, showed much better performance:  
