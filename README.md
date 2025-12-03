@@ -29,9 +29,9 @@ This project focuses on analyzing and building robust classification models to p
 ---
 
 ## Results
-<p align="center">
+<h3 align="center">
   <strong>1. A/B testing</strong>
-</p>
+</h3>
 
 **Qualitative Variables:** All showed p-values close to 0.  
 
