@@ -32,7 +32,9 @@ This project focuses on analyzing and building robust classification models to p
 <p align="center">
   <strong>A/B testing</strong>
 </p>
+
 **Qualitative Variables:** All showed p-values close to 0.  
+
 **Quantitative Variables:** ment_htlh, bmi, phys_htlh also showed p-values close to 0.  
 
 **Observations:**  
