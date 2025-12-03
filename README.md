@@ -56,9 +56,9 @@ Although all independent variables are statistically significant, optimizing the
 - **Data Balancing:** To prevent bias towards majority classes (e.g., "Non-Diabetes"), ensure minority groups ("Pre-Diabetes" and "Diabetes") are adequately represented without reducing overall model performance.  
 - **Feature Importance Assessment:** Use feature importance metrics and analyze coefficients to evaluate the influence of each variable on predictions.
 
-<p align="center">
+<h3 align="center">
   <strong>2. Multi-class classification problem with highly correlated features</strong>
-</p>
+</h3>
 
 <div align="center">
 
@@ -80,9 +80,9 @@ Although all independent variables are statistically significant, optimizing the
 **Conclusion:**  
 The **Random Forest** model is the most suitable for accurately predicting diabetes status based on input features. This allows for early detection of the disease and provides patients with appropriate treatment options tailored to their current condition.
 
-<p align="center">
+<h3 align="center">
   <strong>3. Multi-class classification problem with health-related features</strong>
-</p>
+</h3>
 
 <div align="center">
 
@@ -98,9 +98,9 @@ The **Random Forest** model is the most suitable for accurately predicting diabe
 - Random Forest also outperforms Multinomial Logistic Regression in **Accuracy** and **Kappa**, with values of 0.7761 and 0.6641 respectively, demonstrating superior accuracy and overall performance.
 
 
-<p align="center">
+<h3 align="center">
   <strong>4. Binary classification problem</strong>
-</p>
+</h3>
 
 <div align="center">
 
