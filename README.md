@@ -22,7 +22,7 @@ This project focuses on analyzing and building robust classification models to p
 
 ## Key Results
 <p align="center">
-  **Multi-class classification problem with a highly correlated dataset**: 
+  <strong>Multi-class classification problem with a highly correlated dataset</strong>
 </p>
 
 | Model                         | Accuracy | Kappa   | Macro-F1 |
