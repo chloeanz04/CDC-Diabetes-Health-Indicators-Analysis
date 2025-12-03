@@ -28,7 +28,34 @@ This project focuses on analyzing and building robust classification models to p
 
 ---
 
-## Key Results
+## Results
+<p align="center">
+  <strong>A/B testing</strong>
+</p>
+**Qualitative Variables:** All showed p-values close to 0.  
+**Quantitative Variables:** ment_htlh, bmi, phys_htlh also showed p-values close to 0.  
+
+**Observations:**  
+- All qualitative variables having p-values near 0 indicate that each independent variable is statistically significant in relation to the target variable (diabetes). This shows that these features play an important role in predicting diabetes.  
+- The quantitative variables with p-values near 0 suggest significant differences in the means of ment_htlh, bmi, and phys_htlh across the target groups.  
+
+**Practical Insights:**  
+- **Body Indicators:** Individuals with high BMI, high blood pressure, or high cholesterol are at higher risk of diabetes. Managing weight and controlling blood pressure/cholesterol are crucial for prevention.  
+  - Healthy lifestyle choices (exercise, low-salt diet, reduced animal fat) can help reduce risk.  
+  - Regularly monitor blood pressure and cholesterol, especially for high-risk groups.  
+- **Habits:** Engaging in regular exercise and avoiding smoking lowers risk and improves overall health.  
+- **Lifestyle:** Poor self-reported health, cardiovascular disease, or history of stroke increases diabetes risk. Maintaining overall physical and mental health is essential for prevention.  
+- **Age and Socioeconomic Factors:** Diabetes risk increases with age, especially above 55, and is higher among individuals with lower income or education.  
+  - Regular health check-ups, nutrition education, and encouragement of physical activity are recommended.  
+  - Improve access to affordable healthcare, healthy food, and community health education programs.  
+
+**Modeling Strategy:**  
+Although all independent variables are statistically significant, optimizing the classification model requires:  
+- **Data Balancing:** To prevent bias towards majority classes (e.g., "Non-Diabetes"), ensure minority groups ("Pre-Diabetes" and "Diabetes") are adequately represented without reducing overall model performance.  
+- **Feature Importance Assessment:** Use feature importance metrics and analyze coefficients to evaluate the influence of each variable on predictions.
+
+<div align="center">
+
 <p align="center">
   <strong>Multi-class classification problem with highly correlated features</strong>
 </p>
